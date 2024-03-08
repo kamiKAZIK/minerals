@@ -9,15 +9,19 @@
 #define DHTPIN D1
 #define DHTTYPE DHT22
 
-#define mqtt_server    "test.mosquitto.org"
-#define mqtt_port      1883
-#define readings_topic "sensor/readings"
+#define DEVICE_ID "fb5c282c-2ff9-44a2-b31b-a5fc045d9f30"
+#define MQTT_SERVER "test.mosquitto.org"
+#define MQTT_PORT 1883
+#define MQTT_TOPIC "sensor/readings"
+#define T_QUALIFIER 1
+#define H_QUALIFIER 2
+#define SLEEP_MILLIS 10000
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 DHT dht(DHTPIN, DHTTYPE);
 
-unsigned long lastMsg = 0;
+uint32_t alive = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -36,47 +40,59 @@ void setup() {
   if (!wifiManager.autoConnect("Maskatuoklis 3000")) {
     Serial.println(F("Could not connect to previous SSID!"));
     delay(3000);
-    ESP.reset();
+    ESP.restart();
     delay(5000);
   } else {
     Serial.println(F("Connected!"));
 
     Serial.print(F("Local IP: "));
     Serial.println(WiFi.localIP()); 
-    
-    client.setServer(mqtt_server, mqtt_port);
+
+    client.setServer(MQTT_SERVER, MQTT_PORT);
     dht.begin();
   }
 }
 
 void reconnect() {
-  while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
+  uint8_t tries = 0;
+
+  while (!client.connected() && tries < 3) {
+    Serial.print(F("Attempting MQTT connection..."));
     if (client.connect("ESP8266Client")) {
-      Serial.println("connected");
+      Serial.println(F("connected"));
     } else {
-      Serial.print("failed, rc=");
+      Serial.print(F("failed, rc="));
       Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      delay(5000);
+      Serial.println(F(" try again in 3 seconds"));
+      delay(3000);
+
+      tries++;
     }
   }
 }
 
-void loop() {
-  Serial.println("Sleeping!");
-  ESP.deepSleep(10e6);
-  Serial.println("Awake!");
+void publish(const char* payload) {
+  uint8_t tries = 0;
 
+  Serial.print(F("Publishing JSON: "));
+  Serial.println(payload);
+
+  while (!client.publish(MQTT_TOPIC, payload, true) && tries < 3) {
+    Serial.print(F("failed, rc="));
+    Serial.print(client.state());
+    Serial.println(F(" try again in 3 seconds"));
+    delay(3000);
+
+    tries++;
+  }
+}
+
+void loop() {
   if (!client.connected()) {
     reconnect();
   }
-  client.loop();
 
-  long now = millis();
-  if (now - lastMsg > 10000) {
-    lastMsg = now;
-
+  if (client.loop()) {
     float h = dht.readHumidity();
     float t = dht.readTemperature();
     float hic = dht.computeHeatIndex(t, h, false);
@@ -89,15 +105,18 @@ void loop() {
     Serial.print(hic);
     Serial.println(F("°C"));
 
-    unsigned char humidityQualifier = 'H';
     JsonDocument doc;
-    doc["sensor"] = "gps";
+    doc["device_id"] = DEVICE_ID;
     doc["readings"][0]["value"] = h;
-    doc["readings"][0]["qualifier"] = humidityQualifier;
+    doc["readings"][0]["qualifier"] = H_QUALIFIER;
+    doc["readings"][1]["value"] = t;
+    doc["readings"][1]["qualifier"] = T_QUALIFIER;
 
     String output;
     serializeJson(doc, output);
 
-    client.publish(readings_topic, output.c_str(), true);
+    publish(output.c_str());
   }
+
+  ESP.deepSleep(SLEEP_MILLIS * 1000);
 }
