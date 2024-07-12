@@ -11,7 +11,7 @@ mosquitto_pub \
   --cert /home/edkazaka2001/Downloads/iot/d817ad829713b29dd3ff7e34b4c2c8c5ddc00dcef50cad4777f8f0ca882dbe2b-certificate.pem.crt \
   --key /home/edkazaka2001/Downloads/iot/d817ad829713b29dd3ff7e34b4c2c8c5ddc00dcef50cad4777f8f0ca882dbe2b-private.pem.key \
   --cafile /home/edkazaka2001/Downloads/iot/AmazonRootCA1.pem \
-  -h a1j9n17qa1h23g-ats.iot.eu-central-1.amazonaws.com \
+  -h xxxxxxxxxxxxx-ats.iot.eu-central-1.amazonaws.com \
   -p 8883 \
   -q 0 \
   -d \
@@ -24,7 +24,7 @@ mosquitto_sub \
   --cert /home/edkazaka2001/Downloads/iot/8724a923afddec3e06fd4eb05e02c5e47b8172b2b19c14cb4d00c88d3a273fee-certificate.pem.crt \
   --key /home/edkazaka2001/Downloads/iot/8724a923afddec3e06fd4eb05e02c5e47b8172b2b19c14cb4d00c88d3a273fee-private.pem.key \
   --cafile /home/edkazaka2001/Downloads/iot/AmazonRootCA1.pem \
-  -h a1j9n17qa1h23g-ats.iot.eu-central-1.amazonaws.com \
+  -h xxxxxxxxxxxxx-ats.iot.eu-central-1.amazonaws.com \
   -p 8883 \
   -q 0 \
   -d \
